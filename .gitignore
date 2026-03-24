@@ -6,7 +6,7 @@
 *.dylib
 bin/
 vendor/
-.idea/
+.idea
 go.work.sum
 
 .env
