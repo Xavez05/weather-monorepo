@@ -1,4 +1,4 @@
-package soap
+package apiclient
 
 import "encoding/xml"
 

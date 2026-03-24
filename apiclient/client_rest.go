@@ -1,13 +1,10 @@
-package rest
+package apiclient
 
 import (
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
-
-	apierrors "github.com/Xavez05/weather-monorepo/apiclient/errors"
-	"github.com/Xavez05/weather-monorepo/apiclient/models"
 )
 
 const (
@@ -15,12 +12,8 @@ const (
 	weatherURL = "https://api.open-meteo.com/v1/forecast"
 )
 
-type Client struct {
-	HTTPClient *http.Client
-}
-
 // NewClient ya no necesita APIKey — Open-Meteo es sin autenticación
-func NewClient(_ string) *Client {
+func NewClientRest(_ string) *Client {
 	return &Client{
 		HTTPClient: &http.Client{
 			Timeout: 10 * time.Second,
@@ -28,7 +21,7 @@ func NewClient(_ string) *Client {
 	}
 }
 
-func (c *Client) GetWeather(city string) (*models.WeatherResponse, error) {
+func (c *Client) GetWeatherRest(city string) (*WeatherResponse, error) {
 	lat, lon, country, err := c.geocode(city)
 	if err != nil {
 		return nil, err
@@ -42,7 +35,7 @@ func (c *Client) geocode(city string) (lat, lon float64, country string, err err
 
 	resp, err := c.HTTPClient.Get(url)
 	if err != nil {
-		return 0, 0, "", apierrors.NewAPIError("REST", err.Error(), 0)
+		return 0, 0, "", NewAPIError("REST", err.Error(), 0)
 	}
 	defer resp.Body.Close()
 
@@ -55,18 +48,18 @@ func (c *Client) geocode(city string) (lat, lon float64, country string, err err
 	}
 
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return 0, 0, "", apierrors.NewAPIError("REST", "error parseando geocoding", 0)
+		return 0, 0, "", NewAPIError("REST", "error parseando geocoding", 0)
 	}
 
 	if len(result.Results) == 0 {
-		return 0, 0, "", apierrors.NewAPIError("REST", "ciudad no encontrada", 404)
+		return 0, 0, "", NewAPIError("REST", "ciudad no encontrada", 404)
 	}
 
 	r := result.Results[0]
 	return r.Latitude, r.Longitude, r.CountryCode, nil
 }
 
-func (c *Client) fetchWeather(city, country string, lat, lon float64) (*models.WeatherResponse, error) {
+func (c *Client) fetchWeather(city, country string, lat, lon float64) (*WeatherResponse, error) {
 	url := fmt.Sprintf(
 		"%s?latitude=%f&longitude=%f&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code&timezone=auto",
 		weatherURL, lat, lon,
@@ -74,7 +67,7 @@ func (c *Client) fetchWeather(city, country string, lat, lon float64) (*models.W
 
 	resp, err := c.HTTPClient.Get(url)
 	if err != nil {
-		return nil, apierrors.NewAPIError("REST", err.Error(), 0)
+		return nil, NewAPIError("REST", err.Error(), 0)
 	}
 	defer resp.Body.Close()
 
@@ -88,10 +81,10 @@ func (c *Client) fetchWeather(city, country string, lat, lon float64) (*models.W
 	}
 
 	if err := json.NewDecoder(resp.Body).Decode(&raw); err != nil {
-		return nil, apierrors.NewAPIError("REST", "error parseando clima", 0)
+		return nil, NewAPIError("REST", "error parseando clima", 0)
 	}
 
-	return &models.WeatherResponse{
+	return &WeatherResponse{
 		City:        city,
 		Country:     country,
 		Temperature: raw.Current.Temperature,

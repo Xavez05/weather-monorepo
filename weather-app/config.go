@@ -1,4 +1,4 @@
-package config
+package main
 
 import "os"
 
@@ -7,7 +7,7 @@ type Config struct {
 	Port              string
 }
 
-func Load() (*Config, error) {
+func LoadConfig() (*Config, error) {
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"

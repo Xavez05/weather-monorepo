@@ -1,0 +1,94 @@
+{
+  "info": {
+    "name": "Weather Monorepo API",
+    "description": "Colección de endpoints REST y SOAP del weather dashboard"
+  },
+  "item": [
+    {
+      "name": "REST - Clima por ciudad",
+      "request": {
+        "method": "POST",
+        "url": "http://localhost:8080/api/weather/rest",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"city\": \"Guatemala\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "description": "Obtiene el clima actual de una ciudad usando Open-Meteo REST API"
+      },
+      "response": [
+        {
+          "name": "Respuesta exitosa",
+          "status": "OK",
+          "code": 200,
+          "body": "{\n  \"city\": \"Guatemala\",\n  \"country\": \"GT\",\n  \"temperature\": 22.5,\n  \"feels_like\": 23.1,\n  \"description\": \"parcialmente nublado\",\n  \"humidity\": 75,\n  \"source\": \"REST\"\n}"
+        },
+        {
+          "name": "Ciudad no encontrada",
+          "status": "Bad Gateway",
+          "code": 502,
+          "body": "{\n  \"error\": \"[REST] código 404: ciudad no encontrada\"\n}"
+        },
+        {
+          "name": "Body inválido",
+          "status": "Bad Request",
+          "code": 400,
+          "body": "{\n  \"error\": \"body inválido, se esperaba {\\\"city\\\": \\\"...\\\"}\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "SOAP - Clima por país",
+      "request": {
+        "method": "POST",
+        "url": "http://localhost:8080/api/weather/soap",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"country\": \"GT\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "description": "Obtiene la capital vía SOAP (cdyne) y luego el clima vía REST (Open-Meteo)"
+      },
+      "response": [
+        {
+          "name": "Respuesta exitosa",
+          "status": "OK",
+          "code": 200,
+          "body": "{\n  \"city\": \"GT\",\n  \"country\": \"GT\",\n  \"temperature\": 19.8,\n  \"feels_like\": 20.1,\n  \"description\": \"parcialmente nublado en Guatemala City\",\n  \"humidity\": 68,\n  \"source\": \"SOAP + REST\"\n}"
+        },
+        {
+          "name": "País no encontrado",
+          "status": "Bad Gateway",
+          "code": 502,
+          "body": "{\n  \"error\": \"[SOAP] código 404: código de país no encontrado\"\n}"
+        },
+        {
+          "name": "Body inválido",
+          "status": "Bad Request",
+          "code": 400,
+          "body": "{\n  \"error\": \"body inválido, se esperaba {\\\"country\\\": \\\"...\\\"}\"\n}"
+        }
+      ]
+    }
+  ]
+}

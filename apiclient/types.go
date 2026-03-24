@@ -1,4 +1,6 @@
-package models
+package apiclient
+
+import "net/http"
 
 type WeatherResponse struct {
 	City        string  `json:"city"`
@@ -8,4 +10,8 @@ type WeatherResponse struct {
 	Description string  `json:"description"`
 	Humidity    int     `json:"humidity"`
 	Source      string  `json:"source"`
+}
+
+type Client struct {
+	HTTPClient *http.Client
 }

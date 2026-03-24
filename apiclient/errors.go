@@ -1,4 +1,4 @@
-package errors
+package apiclient
 
 import "fmt"
 
