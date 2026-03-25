@@ -8,20 +8,17 @@ COPY apiclient/ ./apiclient/
 COPY weather-app/ ./weather-app/
 COPY go.work .
 
-# Build del binario
+# Build del binario — ahora main.go está en la raíz de weather-app
 WORKDIR /app/weather-app
-RUN go build -o ../bin/weather-app ./cmd/main.go
+RUN go build -o ../bin/weather-app .
 
 # Stage 2: imagen final liviana
 FROM alpine:latest
 
 WORKDIR /app
 
-# Copiar binario compilado
+# Solo el binario — ya no hay templates
 COPY --from=builder /app/bin/weather-app .
-
-# Copiar templates HTML
-COPY --from=builder /app/weather-app/internal/templates/ ./internal/templates/
 
 EXPOSE 8080
 
