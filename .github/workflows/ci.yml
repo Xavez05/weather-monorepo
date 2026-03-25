@@ -1,0 +1,80 @@
+name: CI - Weather Monorepo
+
+# Solo se ejecuta manualmente desde GitHub Actions
+# o cuando hagas push a main
+on:
+  workflow_dispatch:  # activación manual
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Configurar Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+
+      - name: Sincronizar workspace
+        run: go work sync
+
+      - name: Build apiclient
+        run: |
+          cd apiclient
+          go build ./...
+
+      - name: Build weather-app
+        run: |
+          cd weather-app
+          go build ./...
+
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Configurar Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+
+      - name: Sincronizar workspace
+        run: go work sync
+
+      - name: Instalar dependencias
+        run: |
+          cd weather-app
+          go mod tidy
+
+      - name: Correr tests
+        run: |
+          cd weather-app
+          go test ./... -v
+
+      - name: Reporte de cobertura
+        run: |
+          cd weather-app
+          go test ./... -coverprofile=coverage.out
+          go tool cover -func=coverage.out
+
+  docker:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Build imagen Docker
+        run: docker build -t weather-app .
+d
