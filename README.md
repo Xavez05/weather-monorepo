@@ -1,42 +1,57 @@
 # Weather Monorepo
 
-API REST que consume dos protocolos distintos — REST y SOAP — desde una librería interna compartida, construida en Go con arquitectura de monorepo.
+![CI](https://github.com/Xavez05/weather-monorepo/actions/workflows/ci.yml/badge.svg)
 
-## Estructura
+API that consumes two different protocols — REST and SOAP — from a shared internal library, built in Go with a monorepo architecture.
+
+## Structure
 ```
 weather-monorepo/
-├── apiclient/          # Librería interna compartida
-│   ├── client_rest.go  # Cliente REST (Open-Meteo)
-│   ├── client_soap.go  # Cliente SOAP (CDYNE CountryInfo)
-│   ├── envelope.go     # Structs XML para SOAP
-│   ├── errors.go       # Errores personalizados
-│   └── types.go        # Modelos compartidos
-├── weather-app/        # Servicio principal
-│   ├── main.go         # Entrypoint
-│   ├── server.go       # Configuración del servidor
-│   ├── routes.go       # Definición de rutas
-│   ├── weather_handler.go     # HTTP handlers
-│   ├── weather_service.go     # Lógica de negocio
+├── apiclient/               # Shared internal library
+│   ├── client_rest.go       # REST client (Open-Meteo)
+│   ├── client_soap.go       # SOAP client (CDYNE CountryInfo)
+│   ├── envelope.go          # XML structs for SOAP
+│   ├── errors.go            # Custom error types
+│   └── types.go             # Shared models
+├── weather-app/             # Main service
+│   ├── main.go              # Entrypoint
+│   ├── server.go            # Server setup
+│   ├── routes.go            # Route definitions
+│   ├── weather_handler.go   # HTTP handlers
+│   ├── weather_service.go   # Business logic
 │   ├── weather_service_test.go
 │   └── weather_handler_test.go
+├── .github/
+│   └── workflows/
+│       └── ci.yml           # GitHub Actions CI
 ├── Dockerfile
 ├── go.work
 └── go.work.sum
 ```
 
-## Tecnologías
+## Tech Stack
 
 - **Go 1.23**
-- **Go Workspaces** — monorepo con módulos independientes
-- **Open-Meteo API** — clima actual gratuito sin API key
-- **CDYNE CountryInfo SOAP** — obtención de capital por código de país
-- **testify** — assertions en tests unitarios
-- **Docker** — imagen multistage
+- **Go Workspaces** — monorepo with independent modules
+- **Open-Meteo API** — free weather data, no API key required
+- **CDYNE CountryInfo SOAP** — capital city lookup by country code
+- **testify** — unit test assertions
+- **Docker** — multistage image
+- **GitHub Actions** — automated CI on every push
+
+## CI/CD
+
+The pipeline runs automatically on every push to `main` with three sequential jobs:
+```
+Build → Test → Docker Build
+```
+
+It can also be triggered manually from the **Actions** tab in GitHub using the **Run workflow** button.
 
 ## Endpoints
 
 ### `POST /api/weather/rest`
-Obtiene el clima actual de una ciudad directamente vía REST.
+Returns current weather for a city via REST.
 
 **Request:**
 ```json
@@ -52,7 +67,7 @@ Obtiene el clima actual de una ciudad directamente vía REST.
   "country": "GT",
   "temperature": 22.5,
   "feels_like": 23.1,
-  "description": "parcialmente nublado",
+  "description": "partly cloudy",
   "humidity": 75,
   "source": "REST"
 }
@@ -61,7 +76,7 @@ Obtiene el clima actual de una ciudad directamente vía REST.
 ---
 
 ### `POST /api/weather/soap`
-Obtiene la capital del país vía SOAP y luego consulta el clima de esa capital vía REST.
+Fetches the country capital via SOAP, then retrieves weather for that capital via REST.
 
 **Request:**
 ```json
@@ -77,34 +92,30 @@ Obtiene la capital del país vía SOAP y luego consulta el clima de esa capital 
   "country": "GT",
   "temperature": 19.8,
   "feels_like": 20.1,
-  "description": "cielo despejado en Guatemala City",
+  "description": "clear sky in Guatemala City",
   "humidity": 68,
   "source": "SOAP + REST"
 }
 ```
 
-**Códigos de país soportados:** `GT`, `US`, `MX`, `JP`, `ES`, `DE`, `FR`, `BR`, `AR`, `CO` y cualquier código ISO 3166-1 alpha-2.
+**Supported country codes:** `GT`, `US`, `MX`, `JP`, `ES`, `DE`, `FR`, `BR`, `AR`, `CO` and any ISO 3166-1 alpha-2 code.
 
-## Flujo interno
+## Internal Flow
 ```
-REST:  ciudad → Geocoding API → lat/lon → clima actual
-SOAP:  código país → capital (SOAP) → lat/lon → clima actual (REST)
+REST:  city → Geocoding (Open-Meteo) → lat/lon → current weather
+SOAP:  country code → capital city (CDYNE SOAP) → lat/lon → current weather (Open-Meteo)
 ```
 
-## Correr localmente
+## Run Locally
 ```bash
-# Clonar el repo
 git clone https://github.com/Xavez05/weather-monorepo.git
-cd weather-monorepo
-
-# Correr la app
-cd weather-app
+cd weather-monorepo/weather-app
 go run .
-
-# El servidor queda en http://localhost:8080
 ```
 
-## Correr con Docker
+Server available at `http://localhost:8080`.
+
+## Run with Docker
 ```bash
 docker build -t weather-app .
 docker run -p 8080:8080 weather-app
@@ -116,15 +127,16 @@ cd weather-app
 go test ./... -v
 ```
 
-Cobertura incluye:
-- Casos exitosos REST y SOAP
-- Errores de servicio (ciudad no encontrada, país inválido)
-- Validación de request body vacío
-- HTTP status codes correctos (200, 400, 502)
+Coverage includes:
+- Successful REST and SOAP responses
+- Service errors (city not found, invalid country)
+- Empty request body validation
+- Correct HTTP status codes (200, 400, 502)
 
-## Principios aplicados
+## Principles Applied
 
-- **SOLID** — interfaces `WeatherFetcher` para inversión de dependencias, responsabilidad única por archivo
-- **Clean Code** — handlers, servicios y rutas separados
-- **Go Workspaces** — `apiclient` es reutilizable como librería independiente en otros proyectos del monorepo
-- **Multistage Docker** — imagen final liviana basada en `alpine`
+- **SOLID** — `WeatherFetcher` interface for dependency inversion, single responsibility per file
+- **Clean Code** — handlers, services and routes separated into independent files
+- **Go Workspaces** — `apiclient` is reusable as an independent library across monorepo projects
+- **Multistage Docker** — lightweight final image based on `alpine`
+- **GitHub Actions** — CI pipeline with automated build, tests and docker build
